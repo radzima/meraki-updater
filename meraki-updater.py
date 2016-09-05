@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 """
-Usage: meraki-updater.py -k MERAKI-PROVISIONING-API-KEY -f CSV-UPDATE-FILE
+Usage: 
+  Update devices in a single network from CSV:
+    meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -f <CSV-UPDATE-FILE>
 
-Required arguments:
-    -k/--key            Set the Meraki Provisioning API key
-    -f/--file           Set the file to read for device updates
+  Write all devices on all accessible networks to a CSV (This file WILL be overwritten):
+    meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -g -o <CSV-OUTPUT-FILE>
 
-Optional arguments:
+  Arguments:
+    -k/--key            Set the Meraki Provisioning API key (required)
+    -f/--file           Set the CSV file to read for device updates
+    -o/--output         Set the CSV file to write network devices (This file WILL be overwritten)
+    -g/--get            Get network devices from all networks and write them to CSV
     -v/--ver/--version  Display the version of this script
 """
 
@@ -15,12 +20,14 @@ import os,sys,getopt,csv,json,requests
 from os.path import expanduser
 from time import sleep
 
-version = 1.0
+version = 1.1
 ver = sys.version_info[0] > 2
 
+getDevices= False
 apikey = None
 network = None
 updateFile = None
+outputFile = None
 organization = None
 headers = None
 dashboard_url = 'https://dashboard.meraki.com/'
@@ -55,6 +62,25 @@ def promptUser(options,msg='Choose one'):
             return c
         else:
             print('Incorrect choice, try again.')
+
+def getNetworkDevices(net,addNetID=False):
+    url = api_url + 'networks/' + str(net['id']) + '/devices/'
+    devices = json.loads(requests.get(url,headers=headers).text)
+    if addNetID:
+        for i,device in enumerate(devices):
+            devices[i]['network_id'] = net['id']
+    return devices
+
+def writeToFile(data):
+    print('Writing to {}...'.format(outputFile))
+    try:
+        with open(outputFile,'wb') as output:
+            writer = csv.DictWriter(output,fieldnames=['serial','name','tags','lat','lng','address','mac','model','network_id'],extrasaction='ignore')
+            writer.writeheader()
+            for row in data:
+                writer.writerow(row)
+    except IOError,msg:
+        usage('IOError: {}'.format(msg))
 
 def updateDevices():
     print('Reading from {}...'.format(updateFile))
@@ -135,7 +161,7 @@ def getNets(org):
     except Exception,e:
         sys.exit('Unable to retrieve networks.',e)
 
-def setFile(f):
+def setFile(f,create=False):
     try:
         if '~' in f:
             f = str.replace('~',expanduser('~'))
@@ -143,9 +169,14 @@ def setFile(f):
             print('File {} found, continuing...'.format(f))
             return f
         else:
-            sys.exit('File {} not found.'.format(f))
+            if create:
+                c = open(f,'w')
+                c.write('')
+                c.close()
+            else:
+                usage('File {} not found.'.format(f))
     except IOError,msg:
-        sys.exit('File error.',msg)
+        usage('File error. {}'.format(msg))
 
 def setHeaders(key):
     global headers
@@ -159,12 +190,14 @@ def parseOptions(argv):
     global apikey
     global network
     global updateFile
+    global getDevices
+    global outputFile
     while True:
         try:
             try:
-                opts,args = getopt.getopt(argv[1:],'hvk:f:',['ver','version','help','key=','file='])
+                opts,args = getopt.getopt(argv[1:],'hgvk:f:o:',['output=','get','ver','version','help','key=','file='])
             except getopt.error,msg:
-                return usage('Error:',msg)
+                return usage('Error: {}'.format(msg))
             for o,a in opts:
                 if o in ('-h','--help'):
                     usage()
@@ -177,15 +210,21 @@ def parseOptions(argv):
                 elif o in ('-v','--ver','--version'):
                     print('Meraki Device Updater Version: {}'.format(version))
                     return 0
+                elif o in ('-g','--get'):
+                    getDevices = True
+                elif o in ('-o','--output'):
+                    outputFile = setFile(a,True)
                 else:
                     return usage('Error: Unknown option, exiting...')
             if not apikey:
-                return usage('Error: -k option not provided, exiting.')
-            if not updateFile:
-                return usage('Error: -f option not provided, exiting.')
+                return usage('Error: API key (-k/--key) not provided, exiting.')
+            if not outputFile and getDevices:
+                return usage('Error: Output file (-o/--output) not provided, exiting.')
+            if not updateFile and not getDevices:
+                return usage('Error: Input file (-f/--file) not provided, exiting.')
             break
         except Exception,msg:
-            return usage('Error initializaing.')
+            return usage('Error initializaing. {}'.format(msg))
     return 1
             
 
@@ -198,33 +237,54 @@ def main(argv=None):
         if init == 0:
             return 0
         elif init == 1:
-            print('Getting organizations for this account...')
-            orgs = getOrgs()
-            while True:
-                if len(orgs) > 1:
+            if getDevices:
+                orgs = getOrgs()
+                while True:
+                    if len(orgs) > 1:
+                        try:
+                            organization = promptUser(orgs,'Select an organization')
+                            break
+                        except Exception,e:
+                            print(e)
+                    else:
+                        organization = orgs['1']
+                        break
+                nets = getNets(organization)
+                allDevices = []
+                for net in nets:
+                    devices = getNetworkDevices(nets[net],True)
+                    for d in devices:
+                        allDevices.append(d)
+                writeToFile(allDevices)
+                return 0
+            else:
+                print('Getting organizations for this account...')
+                orgs = getOrgs()
+                while True:
+                    if len(orgs) > 1:
+                        try:
+                            organization = promptUser(orgs,'Select an organization')
+                            break
+                        except Exception,e:
+                            print(e)
+                    else:
+                        organization = orgs['1']
+                        break
+                nets = getNets(organization)
+                while True:
+                    if len(nets) > 0:
+                        try:
+                            network = promptUser(nets,'Select a network')
+                            break
+                        except Exception,e:
+                            print(e)
+                while True:
                     try:
-                        organization = promptUser(orgs,'Select an organization')
+                        updateDevices()
                         break
                     except Exception,e:
-                        print(e)
-                else:
-                    organization = orgs['1']
-                    break
-            nets = getNets(organization)
-            while True:
-                if len(nets) > 0:
-                    try:
-                        network = promptUser(nets,'Select a network')
-                        break
-                    except Exception,e:
-                        print(e)
-            while True:
-                try:
-                    updateDevices()
-                    break
-                except Exception,e:
-                    print('Unable to process...',e)
-            return 0
+                        print('Unable to process...',e)
+                return 0
 
 if __name__ == '__main__':
     try:
