@@ -3,9 +3,11 @@ Update Meraki devices in a network using the provisioning API. Any information i
 
 Usage:
   Update devices in a single network from CSV:
+
         meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -f <CSV-UPDATE-FILE>
 
   Write all devices on all accessible networks to a CSV (This file WILL be overwritten):
+
         meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -g -o <CSV-OUTPUT-FILE>
 
   Arguments:
