@@ -115,6 +115,7 @@ def getOrgs():
 
 def getNets(org):
     try:
+        print('Getting networks for {}...'.format(org['name']))
         url = api_url + 'organizations/' + str(org['id']) + '/networks'
         nets = json.loads(requests.get(url,headers=headers).text)
         netDict = {}
@@ -192,12 +193,15 @@ def main(argv=None):
             print('Getting organizations for this account...')
             orgs = getOrgs()
             while True:
-                if len(orgs) > 0:
+                if len(orgs) > 1:
                     try:
                         organization = promptUser(orgs,'Select an organization')
                         break
                     except Exception,e:
                         print(e)
+                else:
+                    organization = orgs['1']
+                    break
             nets = getNets(organization)
             while True:
                 if len(nets) > 0:
