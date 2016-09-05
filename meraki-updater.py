@@ -70,9 +70,15 @@ def updateDevices():
                         'lng': row['lng'],
                         'address': row['address']
                         }
-                print('Updating {} from file...'.format(row['serial']))
+                print('Updating {} from file...'.format(row['serial']),end='')
+                sys.stdout.flush()
                 url = api_url + "networks/" + str(network['id']) + "/devices/" + options['serial']
-                d = json.loads(requests.get(url,headers=headers).text)
+                try:
+                    d = json.loads(requests.get(url,headers=headers).text)
+                except:
+                    print(' Failed!')
+                    print('Device {} not found in network {}, continuing...'.format(options['serial'],network['name']))
+                    continue
                 payload = {}
                 if options['name']:
                     payload['name'] = options['name']
@@ -87,14 +93,16 @@ def updateDevices():
                 payload['mac'] = d['mac']
                 payload['serial'] = options['serial']
                 data = json.dumps(payload)
-                print(data)
-                r = requests.put(url,headers=headers, data=data)
-                print('Status code',r.status_code,end=': ')
-                if r.status_code == 200:
-                    print('Success!')
-                else:
-                    print('Failed!')
-                    print(r.content)
+                try:
+                    r = requests.put(url,headers=headers, data=data)
+                    if r.status_code == 200:
+                        print(' Success!')
+                    else:
+                        print(' Failed!')
+                        print(r.content)
+                except:
+                    print('Cannot update device {}, continuing...'.format(options['serial']))
+                    continue
     except IOError,e:
         print('Error reading file.',e)
     except Exception,e:
