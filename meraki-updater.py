@@ -84,8 +84,8 @@ def writeToFile(data):
             writer.writeheader()
             for row in data:
                 writer.writerow(row)
-    except IOError,msg:
-        usage('IOError: {}'.format(msg))
+    except IOError as exc:
+        usage('IOError: {}'.format(str(exc)))
 
 def updateDevices():
     print('Reading from {}...'.format(updateFile))
@@ -143,10 +143,10 @@ def updateDevices():
                 except:
                     print('Cannot update device {}, continuing...'.format(options['serial']))
                     continue
-    except IOError,e:
-        print('Error reading file.',e)
-    except Exception,e:
-        print('Error.',e)
+    except IOError as exc:
+        print('Error reading file.',str(exc))
+    except Exception as exc:
+        print('Error.',str(exc))
 
 def getOrgs():
     try:
@@ -158,8 +158,8 @@ def getOrgs():
             orgDict[str(x)] = org
             x += 1
         return orgDict
-    except Exception,e:
-        sys.exit('Unable to retrieve organizations.',e)
+    except Exception as exc:
+        sys.exit('Unable to retrieve organizations.',str(exc))
 
 def getNets(org):
     try:
@@ -172,8 +172,8 @@ def getNets(org):
             netDict[str(x)] = net
             x += 1
         return netDict
-    except Exception,e:
-        sys.exit('Unable to retrieve networks.',e)
+    except Exception as exc:
+        sys.exit('Unable to retrieve networks.',str(exc))
 
 def setFile(f,create=False):
     try:
@@ -189,8 +189,8 @@ def setFile(f,create=False):
                 c.close()
             else:
                 usage('File {} not found.'.format(f))
-    except IOError,msg:
-        usage('File error. {}'.format(msg))
+    except IOError as exc:
+        usage('File error. {}'.format(str(exc)))
 
 def setHeaders(key):
     global headers
@@ -211,8 +211,8 @@ def parseOptions(argv):
         try:
             try:
                 opts,args = getopt.getopt(argv[1:],'hgmvk:f:o:',['output=','get','ver','version','help','key=','file=','multinetwork'])
-            except getopt.error,msg:
-                return usage('Error: {}'.format(msg))
+            except getopt.error as exc:
+                return usage('Error: {}'.format(str(msg)))
             for o,a in opts:
                 if o in ('-h','--help'):
                     usage()
@@ -240,8 +240,8 @@ def parseOptions(argv):
             if not updateFile and not getDevices:
                 return usage('Error: Input file (-f/--file) not provided, exiting.')
             break
-        except Exception,msg:
-            return usage('Error initializaing. {}'.format(msg))
+        except Exception as exc:
+            return usage('Error initializaing. {}'.format(str(exc)))
     return 1
             
 
@@ -261,8 +261,8 @@ def main(argv=None):
                         try:
                             organization = promptUser(orgs,'Select an organization')
                             break
-                        except Exception,e:
-                            print(e)
+                        except Exception as exc:
+                            print(str(exc))
                     else:
                         organization = orgs['1']
                         break
@@ -282,8 +282,8 @@ def main(argv=None):
                         try:
                             organization = promptUser(orgs,'Select an organization')
                             break
-                        except Exception,e:
-                            print(e)
+                        except Exception as exc:
+                            print(str(exc))
                     else:
                         organization = orgs['1']
                         break
@@ -294,18 +294,18 @@ def main(argv=None):
                             try:
                                 network = promptUser(nets,'Select a network')
                                 break
-                            except Exception,e:
-                                print(e)
+                            except Exception as exc:
+                                print(str(exc))
                 while True:
                     try:
                         updateDevices()
                         break
-                    except Exception,e:
-                        print('Unable to process...',e)
+                    except Exception as exc:
+                        print('Unable to process...',str(exc))
                 return 0
 
 if __name__ == '__main__':
     try:
         sys.exit(main())
-    except (KeyboardInterrupt):
+    except KeyboardInterrupt as exc:
         sys.exit('User cancelled, exiting.')
