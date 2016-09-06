@@ -4,6 +4,9 @@ Usage:
   Update devices in a single network from CSV:
     meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -f <CSV-UPDATE-FILE>
 
+  Update devices from a CSV with network specified per device:
+    meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -m -f <CSV-UPDATE-FILE>
+
   Write all devices on all accessible networks to a CSV (This file WILL be overwritten):
     meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -g -o <CSV-OUTPUT-FILE>
 
@@ -12,6 +15,7 @@ Usage:
     -f/--file           Set the CSV file to read for device updates
     -o/--output         Set the CSV file to write network devices (This file WILL be overwritten)
     -g/--get            Get network devices from all networks and write them to CSV
+    -m/--multinetwork   Update devices across multiple networks using a CSV
     -v/--ver/--version  Display the version of this script
 """
 
@@ -23,7 +27,8 @@ from time import sleep
 version = 1.1
 ver = sys.version_info[0] > 2
 
-getDevices= False
+multiNetUpdate = False
+getDevices = False
 apikey = None
 network = None
 updateFile = None
@@ -85,7 +90,7 @@ def writeToFile(data):
 def updateDevices():
     print('Reading from {}...'.format(updateFile))
     try:
-        with open(updateFile,'rb') as updates:
+        with open(updateFile,'rU') as updates:
             reader = csv.DictReader(updates)
             for row in reader:
                 options = {
@@ -98,12 +103,21 @@ def updateDevices():
                         }
                 print('Updating {} from file...'.format(row['serial']),end='')
                 sys.stdout.flush()
-                url = api_url + "networks/" + str(network['id']) + "/devices/" + options['serial']
+                if multiNetUpdate:
+                    try:
+                        net_id = row['network_id']
+                    except:
+                        print('Failed!')
+                        print('Network not specified in CSV, continuing...')
+                        continue
+                else:
+                    net_id = str(network['id'])
+                url = api_url + "networks/" + net_id + "/devices/" + options['serial']
                 try:
                     d = json.loads(requests.get(url,headers=headers).text)
                 except:
                     print(' Failed!')
-                    print('Device {} not found in network {}, continuing...'.format(options['serial'],network['name']))
+                    print('Device {} not found in network {}, continuing...'.format(options['serial'],net_id))
                     continue
                 payload = {}
                 if options['name']:
@@ -192,10 +206,11 @@ def parseOptions(argv):
     global updateFile
     global getDevices
     global outputFile
+    global multiNetUpdate
     while True:
         try:
             try:
-                opts,args = getopt.getopt(argv[1:],'hgvk:f:o:',['output=','get','ver','version','help','key=','file='])
+                opts,args = getopt.getopt(argv[1:],'hgmvk:f:o:',['output=','get','ver','version','help','key=','file=','multinetwork'])
             except getopt.error,msg:
                 return usage('Error: {}'.format(msg))
             for o,a in opts:
@@ -214,6 +229,8 @@ def parseOptions(argv):
                     getDevices = True
                 elif o in ('-o','--output'):
                     outputFile = setFile(a,True)
+                elif o in ('-m','--multinetwork'):
+                    multiNetUpdate = True
                 else:
                     return usage('Error: Unknown option, exiting...')
             if not apikey:
@@ -270,14 +287,15 @@ def main(argv=None):
                     else:
                         organization = orgs['1']
                         break
-                nets = getNets(organization)
-                while True:
-                    if len(nets) > 0:
-                        try:
-                            network = promptUser(nets,'Select a network')
-                            break
-                        except Exception,e:
-                            print(e)
+                if not multiNetUpdate:
+                    nets = getNets(organization)
+                    while True:
+                        if len(nets) > 0:
+                            try:
+                                network = promptUser(nets,'Select a network')
+                                break
+                            except Exception,e:
+                                print(e)
                 while True:
                     try:
                         updateDevices()

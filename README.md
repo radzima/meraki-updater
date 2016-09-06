@@ -7,6 +7,10 @@ Usage:
 
         meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -f <CSV-UPDATE-FILE>
 
+  Update devices from a CSV with network specified per device:
+
+        meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -m -f <CSV-UPDATE-FILE>
+
   Write all devices on all accessible networks to a CSV (This file WILL be overwritten):
 
         meraki-updater.py -k <MERAKI-PROVISIONING-API-KEY> -g -o <CSV-OUTPUT-FILE>
@@ -17,6 +21,7 @@ Usage:
         -f/--file           Set the CSV file to read for device updates
         -o/--output         Set the CSV file to write network devices (This file WILL be overwritten)
         -g/--get            Get network devices from all networks and write them to CSV
+        -m/--multinetwork   Update devices across multiple networks using a CSV
         -v/--ver/--version  Display the version of this script
 
 <br />
