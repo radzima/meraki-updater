@@ -187,6 +187,8 @@ def setFile(f,create=False):
                 c = open(f,'w')
                 c.write('')
                 c.close()
+                print('File{} not found, creating...'.format(f))
+                return f
             else:
                 usage('File {} not found.'.format(f))
     except IOError as exc:
