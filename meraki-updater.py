@@ -52,15 +52,15 @@ def promptUser(options,msg='Choose one'):
     print()
     while True:
         for choice in sorted(options):
-            print('  ' + choice,end=':')
+            print('  {}'.format(choice),end=':')
             if 'id' in options[choice]:
-                print(' [' + str(options[choice]['id']) + ']',end='')
-                print(' ' + options[choice]['name'])
+                print(' [{}]'.format(str(options[choice]['id'])),end='')
+                print(' {}'.format(options[choice]['name']))
         print()
         if ver:
-            res = input(msg + ': ')
+            res = input('{}: '.format(msg))
         else:
-            res = raw_input(msg + ': ')
+            res = raw_input('{}: '.format(msg))
         print()
         if res in options:
             c = options[res]
@@ -187,6 +187,7 @@ def setFile(f,create=False):
                 c = open(f,'w')
                 c.write('')
                 c.close()
+                print('File {} not found, creating...'.format(f))
                 return f
             else:
                 usage('File {} not found.'.format(f))
