@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Usage: 
   Update devices in a single network from CSV:
@@ -79,7 +78,7 @@ def getNetworkDevices(net,addNetID=False):
 def writeToFile(data):
     print('Writing to {}...'.format(outputFile))
     try:
-        with open(outputFile,'wb') as output:
+        with open(outputFile,'w') as output:
             writer = csv.DictWriter(output,fieldnames=['serial','name','tags','lat','lng','address','mac','model','network_id'],extrasaction='ignore')
             writer.writeheader()
             for row in data:
@@ -187,6 +186,7 @@ def setFile(f,create=False):
                 c = open(f,'w')
                 c.write('')
                 c.close()
+                return f
             else:
                 usage('File {} not found.'.format(f))
     except IOError as exc:
