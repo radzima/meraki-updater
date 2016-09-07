@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Usage: 
   Update devices in a single network from CSV:
