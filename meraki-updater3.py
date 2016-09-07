@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Usage: 
   Update devices in a single network from CSV:
@@ -59,8 +59,6 @@ def promptUser(options,msg='Choose one'):
         print()
         if ver:
             res = input(msg + ': ')
-        else:
-            res = raw_input(msg + ': ')
         print()
         if res in options:
             c = options[res]
@@ -79,7 +77,7 @@ def getNetworkDevices(net,addNetID=False):
 def writeToFile(data):
     print('Writing to {}...'.format(outputFile))
     try:
-        with open(outputFile,'wb') as output:
+        with open(outputFile,'w') as output:
             writer = csv.DictWriter(output,fieldnames=['serial','name','tags','lat','lng','address','mac','model','network_id'],extrasaction='ignore')
             writer.writeheader()
             for row in data:
